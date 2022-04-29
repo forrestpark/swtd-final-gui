@@ -2,6 +2,8 @@ import com.codeborne.selenide.Selectors;
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
 import com.codeborne.selenide.WebDriverRunner;
+import net.bytebuddy.asm.Advice;
+import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +24,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Random;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -48,6 +51,8 @@ public class GUITesting {
     static DateTimeFormatter dtf_ymdhms_dash;
     static DateTimeFormatter dtf_ymd;
     static Calendar calendar;
+    static Random random;
+    static String currentDay;
 
     @BeforeAll
     public static void setUpAll() {
@@ -63,6 +68,7 @@ public class GUITesting {
         dtf_ymd = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         calendar = Calendar.getInstance();
+        random = new Random(1234);
     }
 
     @BeforeEach
@@ -78,17 +84,31 @@ public class GUITesting {
         currentTime = LocalDateTime.now();
         currentTimeString = dtf_ymdhms.format(currentTime);
         current_ymd_string = dtf_ymd.format(currentTime);
+        current_ymd = LocalDateTime.parse(current_ymd_string + " 00:00:00", dtf_ymdhms_dash);
         System.out.println("current time: " + currentTimeString);
 
         calendar.setTime(getCurrentDate());
+
+        currentDay = currentTime.getDayOfWeek().toString();
+        System.out.println("current day: " + currentDay);
     }
 
+
+    /*
+        Testing the first page that appears when accessing the main URL (https://appointmentscheduler2.herokuapp.com/)
+        is the sign in page
+     */
     @Test
     public void testLogInPage() {
         openMainURL();
         assertTrue( $(By.className("card-header")).text().contains("Sign in"));
     }
 
+
+    /*
+        Testing logging in with the admin account credentials given as dummy in the documentation
+        RESULT: Successfully logs in
+     */
     @Test
     public void testLogInAdmin() {
         openMainURL();
@@ -109,60 +129,77 @@ public class GUITesting {
 
     }
 
-//    the given dummy provider account credentials do not work
-//
-//    @Test
-//    public void testLogInProvider() {
-//        openMainURL();
-//        assertTrue( $(By.className("card-header")).text().contains("Sign in"));
-//        $(Selectors.byId("username")).sendKeys("provider");
-//        $(Selectors.byId("password")).sendKeys("qwerty123");
-//        $(Selectors.byXpath("//*[text()='Login']")).click();
-//        sleep(5000);
-//        String currentUrl = WebDriverRunner.getWebDriver().getCurrentUrl();
-//        assertEquals(currentUrl, "https://appointmentscheduler2.herokuapp.com/");
-//
-//        // check if logged in as provider
-//        $(Selectors.byCssSelector("p.navbar-nav.ml-auto.navbar-text")).text().contains("provider");
-//
-//        // log out
-//        $(Selectors.byXpath("//*[text()='Log out']")).click();
-//        assertTrue( $(By.className("card-header")).text().contains("Sign in"));
-//    }
-//
-//    the given dummy corporate customer account credentials do not work
-//    @Test
-//    public void testLogInCorporateCustomer() {
-//        openMainURL();
-//        assertTrue( $(By.className("card-header")).text().contains("Sign in"));
-//        $(Selectors.byId("username")).sendKeys("customer_c");
-//        $(Selectors.byId("password")).sendKeys("qwerty123");
-//        $(Selectors.byXpath("//*[text()='Login']")).click();
-//        sleep(5000);
-//        String currentUrl = WebDriverRunner.getWebDriver().getCurrentUrl();
-//        assertEquals(currentUrl, "https://appointmentscheduler2.herokuapp.com/");
-//
-//        // check if logged in as corporate customer
-//        $(Selectors.byCssSelector("p.navbar-nav.ml-auto.navbar-text")).text().contains("admin");
-//
-//        // log out
-//        $(Selectors.byXpath("//*[text()='Log out']")).click();
-//        assertTrue( $(By.className("card-header")).text().contains("Sign in"));
-//    }
+    /*
+        Testing logging in with the dummy provider credentials given in the documentation
+        FAULT: the credentials provided in the documentation does not work as expected; failed log-in
+     */
+    @Test
+    @Ignore
+    public void testLogInProvider() {
+        openMainURL();
+        assertTrue( $(By.className("card-header")).text().contains("Sign in"));
+        $(Selectors.byId("username")).sendKeys("provider");
+        $(Selectors.byId("password")).sendKeys("qwerty123");
+        $(Selectors.byXpath("//*[text()='Login']")).click();
+        sleep(5000);
+        String currentUrl = WebDriverRunner.getWebDriver().getCurrentUrl();
+        assertEquals(currentUrl, "https://appointmentscheduler2.herokuapp.com/");
 
-//    the given dummy retail customer account credentials do not work
-//    @Test
-//    public void testLogInAdminRetailCustomer() {
-//        openMainURL();
-//        assertTrue( $(By.className("card-header")).text().contains("Sign in"));
-//        $(Selectors.byId("username")).sendKeys("customer_r");
-//        $(Selectors.byId("password")).sendKeys("qwerty123");
-//        $(Selectors.byXpath("//*[text()='Login']")).click();
-//        sleep(5000);
-//        String currentUrl = WebDriverRunner.getWebDriver().getCurrentUrl();
-//        assertEquals(currentUrl, "https://appointmentscheduler2.herokuapp.com/");
-//    }
+        // check if logged in as provider
+        $(Selectors.byCssSelector("p.navbar-nav.ml-auto.navbar-text")).text().contains("provider");
 
+        // log out
+        $(Selectors.byXpath("//*[text()='Log out']")).click();
+        assertTrue( $(By.className("card-header")).text().contains("Sign in"));
+    }
+
+    /*
+        Testing logging in with the dummy corporate customer credentials given in the documentation
+        FAULT: the credentials provided in the documentation does not work as expected; failed log-in
+    */
+    @Test
+    @Ignore
+    public void testLogInCorporateCustomer() {
+        openMainURL();
+        assertTrue( $(By.className("card-header")).text().contains("Sign in"));
+        $(Selectors.byId("username")).sendKeys("customer_c");
+        $(Selectors.byId("password")).sendKeys("qwerty123");
+        $(Selectors.byXpath("//*[text()='Login']")).click();
+        sleep(5000);
+        String currentUrl = WebDriverRunner.getWebDriver().getCurrentUrl();
+        assertEquals(currentUrl, "https://appointmentscheduler2.herokuapp.com/");
+
+        // check if logged in as corporate customer
+        $(Selectors.byCssSelector("p.navbar-nav.ml-auto.navbar-text")).text().contains("admin");
+
+        // log out
+        $(Selectors.byXpath("//*[text()='Log out']")).click();
+        assertTrue( $(By.className("card-header")).text().contains("Sign in"));
+    }
+
+    /*
+        Testing logging in with the dummy retail customer credentials given in the documentation
+        FAULT: the credentials provided in the documentation does not work as expected; failed log-in
+     */
+    @Test
+    @Ignore
+    public void testLogInRetailCustomer() {
+        openMainURL();
+        assertTrue( $(By.className("card-header")).text().contains("Sign in"));
+        $(Selectors.byId("username")).sendKeys("customer_r");
+        $(Selectors.byId("password")).sendKeys("qwerty123");
+        $(Selectors.byXpath("//*[text()='Login']")).click();
+        sleep(5000);
+        String currentUrl = WebDriverRunner.getWebDriver().getCurrentUrl();
+        assertEquals(currentUrl, "https://appointmentscheduler2.herokuapp.com/");
+    }
+
+
+    /*
+        Tests whether one can successfully create a new retail customer account
+        by joining with randomly generated credentials such as username and password
+        and by logging in with said credentials, after joining, to confirm an account has been successfully created
+     */
     @Test
     public void testNewRetailAccountCreation() {
         openMainURL();
@@ -179,8 +216,23 @@ public class GUITesting {
         sleep(5000);
         String currentUrl = WebDriverRunner.getWebDriver().getCurrentUrl();
         assertEquals(currentUrl, "https://appointmentscheduler2.herokuapp.com/customers/new/retail");
+
+        // check whether one can successfully log in with the newly created account info
+        assertTrue( $(By.className("card-header")).text().contains("Sign in"));
+        $(Selectors.byId("username")).sendKeys(randomUsername);
+        $(Selectors.byId("password")).sendKeys(randomPassword);
+        $(Selectors.byXpath("//*[text()='Login']")).click();
+        sleep(5000);
+        currentUrl = WebDriverRunner.getWebDriver().getCurrentUrl();
+        assertEquals(currentUrl, "https://appointmentscheduler2.herokuapp.com/");
+
     }
 
+    /*
+        Tests whether one can successfully create a new corporate customer account
+        by joining with randomly generated credentials such as username and password
+        and by logging in with said credentials, after joining, to confirm an account has been successfully created
+     */
     @Test
     public void testNewCorporateAccountCreation() {
         openMainURL();
@@ -202,6 +254,9 @@ public class GUITesting {
         assertEquals(currentUrl, "https://appointmentscheduler2.herokuapp.com/customers/new/corporate");
     }
 
+    /*
+        A helper method for entering necessary information for account creation
+     */
     private static void inputAccountCredentials() {
 
         // feed in credentials
@@ -217,16 +272,50 @@ public class GUITesting {
         $(Selectors.byId("city")).sendKeys(dummyCityName);
     }
 
+    /*
+        Testing if the hourly grid of the current day is colored in eggshell yellow (hexcode: #fcf8e3)
+        ISSUE: could not figure what the html/css properties are for the half-hour slots of each day
+     */
     @Test
-    public void testDateInYellowEqualsToday() {
+    @Ignore
+    public void testDateInYellowEqualsToday_WeeklyMode() {
         login();
-        String today_ymd = $(Selectors.byCssSelector("th.fc-day-header.fc-widget-header.fc-mon.fc-today")).getAttribute("data-date");
+        selectWeeklyMode();
+
+        SelenideElement today = $(Selectors.byCssSelector(dayClassNameConstructor("th.fc-day-header.fc-widget-header.fc-", currentDay) + ".fc-today"));
+        String today_ymd = today.getAttribute("data-date");
         long days_diff = MainPage.calculateDayDifference(currentTime, LocalDateTime.parse(today_ymd + " 00:00:00", dtf_ymdhms_dash));
         assertEquals(0, days_diff);
 
         // not sure how to test that grid is colored in yellow
+        String today_color = today.getCssValue("background-color");
+        System.out.println("today color: " + today_color);
+        assertEquals(today_color, "fcf8e3");
     }
 
+    /*
+        Testing if the daily grid of the current day is colored in eggshell yellow (hexcode: #fcf8e3)
+     */
+    @Test
+    @Ignore
+    public void testDateInYellowEqualsToday_MonthlyMode() {
+        login();
+        selectMonthMode();
+
+        SelenideElement today = $(Selectors.byCssSelector(dayClassNameConstructor("td.fc-day-header.fc-widget-header.fc-", currentDay) + ".fc-today"));
+        String today_ymd = today.getAttribute("data-date");
+        long days_diff = MainPage.calculateDayDifference(currentTime, LocalDateTime.parse(today_ymd + " 00:00:00", dtf_ymdhms_dash));
+        assertEquals(0, days_diff);
+
+        // not sure how to test that grid is colored in yellow
+        String today_color = today.getCssValue("background-color");
+        System.out.println("today color: " + today_color);
+        assertEquals(today_color, "fcf8e3");
+    }
+
+    /*
+        Tests calendar view for monthly mode by checking the absence of hourly grids and the presence of day grids
+     */
     @Test
     public void testMonthModeCalendarView() {
 
@@ -239,6 +328,10 @@ public class GUITesting {
 
     }
 
+    /*
+        Tests if the first view on monthly view displays the current month
+        and not any other month in either the past of the future
+     */
     @Test
     public void testMonthModeDisplayCurrentMonth() {
 
@@ -256,6 +349,9 @@ public class GUITesting {
 
     }
 
+    /*
+        Tests back arrow button on monthly mode whether pressing the back button leads to monthly view of the past month
+     */
     @Test
     public void testBackArrowMonthMode() {
 
@@ -278,10 +374,25 @@ public class GUITesting {
 
     }
 
+    /*
+        Helper method for selecting month mode on main view
+     */
     private static void selectMonthMode() {
         $(Selectors.byCssSelector("button.fc-month-button.fc-button.fc-state-default.fc-corner-left")).click();
     }
 
+    /*
+        Helper method for selecting weekly mode on main view
+     */
+    private static void selectWeeklyMode() {
+        $(Selectors.byCssSelector("button.fc-agendaWeek-button.fc-button.fc-state-default.fc-corner-right")).click();
+    }
+
+    /*
+        Tests two cases for the main page
+        1) if a user is still logged in due to past log-in, a log out text is expected to be displayed
+        2) if a user is not logged in, the first main page to be display is expected to be the log in page, not the calendar view page
+     */
     @Test
     public void testAccessToMainPage() {
         openMainURL();
@@ -294,6 +405,9 @@ public class GUITesting {
         }
     }
 
+    /*
+        Tests front arrow button on monthly mode whether pressing the front button leads to monthly view of the month after the one on display
+     */
     @Test
     public void testFrontArrowMonthMode() {
         login();
@@ -314,10 +428,17 @@ public class GUITesting {
         assertEquals("" + nextYear, parseCalendarMonthYear[1]);
     }
 
+    /*
+        Tests back arrow button on weekly mode whether pressing the front button leads to weekly view of the week before the one on display
+     */
     @Test
     public void testBackArrowWeeklyMode() {
         // calculate the time difference between current day and the day of past week in the same slot
         login();
+
+        // select weekly mode
+        $(Selectors.byCssSelector("button.fc-agendaWeek-button.fc-button.fc-state-default.fc-corner-right")).click();
+
         String today_ymd = $(Selectors.byCssSelector("th.fc-day-header.fc-widget-header.fc-mon")).getAttribute("data-date");
 
         $(Selectors.byCssSelector("button.fc-prev-button.fc-button.fc-state-default.fc-corner-left")).click();
@@ -350,28 +471,160 @@ public class GUITesting {
         assertTrue( $(By.className("card-header")).text().contains("Sign in"));
     }
 
+    /*
+        Tests front arrow button on weekly mode whether pressing the front button leads to weekly view of the week after the one on display
+     */
     @Test
     public void testFrontArrowWeeklyMode() {
+        // calculate the time difference between current day and the day of past week in the same slot
+        login();
 
+        // select weekly mode
+        $(Selectors.byCssSelector("button.fc-agendaWeek-button.fc-button.fc-state-default.fc-corner-right")).click();
+
+        String today_ymd = $(Selectors.byCssSelector("th.fc-day-header.fc-widget-header.fc-mon")).getAttribute("data-date");
+
+        $(Selectors.byCssSelector("button.fc-next-button.fc-button.fc-state-default.fc-corner-right")).click();
+
+        String next_monday = $(Selectors.byCssSelector("th.fc-day-header.fc-widget-header.fc-mon.fc-future")).getAttribute("data-date");
+
+        long days_diff = MainPage.calculateDayDifference(LocalDateTime.parse(next_monday + " 00:00:00", dtf_ymdhms_dash), LocalDateTime.parse(today_ymd + " 00:00:00", dtf_ymdhms_dash));
+        System.out.println("days diff: " + days_diff);
+        assertEquals(7, days_diff);
     }
 
+    /*
+        Tests the today button; whether the today button makes the calender to return back to the calendar view that contains the current day
+     */
     @Test
     public void testTodayButton() {
+        login();
 
+        String today_ymd_actual = $(Selectors.byCssSelector("th.fc-day-header.fc-widget-header.fc-mon")).getAttribute("data-date");
+
+        for (int i = 0; i < 3; i++) {
+            $(Selectors.byCssSelector("button.fc-next-button.fc-button.fc-state-default.fc-corner-right")).click();
+        }
+
+        // push today button
+        pushToday();
+
+        String today_ymd_expected1 = $(Selectors.byCssSelector("th.fc-day-header.fc-widget-header.fc-mon")).getAttribute("data-date");
+        assertEquals(today_ymd_actual, today_ymd_expected1);
+
+        for (int i = 0; i < 6; i++) {
+            $(Selectors.byCssSelector("button.fc-prev-button.fc-button.fc-state-default.fc-corner-left")).click();
+        }
+
+        // push today button
+        pushToday();
+
+        String today_ymd_expected2 = $(Selectors.byCssSelector("th.fc-day-header.fc-widget-header.fc-mon")).getAttribute("data-date");
+        assertEquals(today_ymd_actual, today_ymd_expected2);
     }
 
+    /*
+        helper method for pressing the today button
+     */
+    private void pushToday() {
+        $(Selectors.byCssSelector("button.fc-today-button.fc-button.fc-state-default.fc-corner-left.fc-corner-right")).click();
+    }
+
+    /*
+        Tests whether the first calendar view to be displayed on weekly mode is the current week
+     */
     @Test
     public void testFirstScreenIsCurrentWeek() {
+        // calculate the time difference between current day and the day of past week in the same slot
+        login();
+
+        // select weekly mode
+        $(Selectors.byCssSelector("button.fc-agendaWeek-button.fc-button.fc-state-default.fc-corner-right")).click();
+
+        // get monday
+        String monday_ymd = $(Selectors.byCssSelector("th.fc-day-header.fc-widget-header.fc-mon")).getAttribute("data-date");
+        LocalDateTime monday = LocalDateTime.parse(monday_ymd + " 00:00:00", dtf_ymdhms_dash);
+
+        System.out.println("monday: " + monday.toString());
+
+        // get sunday
+        String sunday_ymd = $(Selectors.byCssSelector("th.fc-day-header.fc-widget-header.fc-sun")).getAttribute("data-date");
+        LocalDateTime sunday = LocalDateTime.parse(sunday_ymd + " 00:00:00", dtf_ymdhms_dash);
+        System.out.println("sunday: " + sunday.toString());
+
+        // get today
+        LocalDateTime today = current_ymd;
+        System.out.println("today: " + today.toString());
+
+        // check whether today is between monday and sunday, inclusive
+        long duration_from_monday = MainPage.calculateDayDifference(monday, today);
+        long duration_to_sunday = MainPage.calculateDayDifference(today, sunday);
+        System.out.println("from monday: " + duration_from_monday);
+        System.out.println("from sunday: " + duration_to_sunday);
+        assertEquals(6.0, duration_from_monday + duration_to_sunday);
 
     }
 
-    @Test
-    public void testMonthMode() {
+    private String dayClassNameConstructor(String base, String currentDay) {
+        System.out.println("dayclassname constructor: " + base + currentDay.substring(0,3).toLowerCase());
+        return base + currentDay.substring(0,3).toLowerCase();
+    }
 
+    /*
+        Tests whether monthly calendar view displays 42 days
+     */
+    @Test
+    public void testMonthModeCalendarNumOfDays() {
+        login();
+        selectMonthMode();
+
+        SelenideElement calendar = $(Selectors.byId("calendar"));
+
+        // test 6x7 grid
+        String first_monday_string = calendar.$(Selectors.byCssSelector("td.fc-day-top.fc-mon")).getAttribute("data-date");
+        System.out.println("first monday: " + first_monday_string);
+
+        String last_sunday_string = calendar.findElements(By.cssSelector("td.fc-day.fc-widget-content.fc-sun")).get(5).getAttribute("data-date");
+        System.out.println("last sunday: " + last_sunday_string);
+
+        // date difference between first monday and last sunday?
+        LocalDateTime first_monday = LocalDateTime.parse(first_monday_string + " 00:00:00", dtf_ymdhms_dash);
+        LocalDateTime last_sunday = LocalDateTime.parse(last_sunday_string + " 00:00:00", dtf_ymdhms_dash);
+
+        long month_day_difference = MainPage.calculateDayDifference(first_monday, last_sunday);
+        assertEquals(41.0, month_day_difference);
+    }
+
+    /*
+        Tests the calendar view displays 42 grids for 42 days, one grid per day
+        and each neighboring grid/day is only one day apart from each other
+     */
+    @Test
+    public void testMonthModeCalendarViewNumberOfGrids() {
+        login();
+        selectMonthMode();
+
+        SelenideElement calendar = $(Selectors.byId("calendar"));
+
+        List<WebElement> listDayGrid= calendar.findElements(By.cssSelector("td.fc-day.fc-widget-content"));
+
+        assertEquals(42, listDayGrid.size());
+
+        LocalDateTime today;
+        LocalDateTime tomorrow;
+
+        for (int i = 0; i < listDayGrid.size() - 1; i++) {
+            today = LocalDateTime.parse( listDayGrid.get(i).getAttribute("data-date")+ " 00:00:00", dtf_ymdhms_dash);
+            tomorrow = LocalDateTime.parse( listDayGrid.get(i + 1).getAttribute("data-date")+ " 00:00:00", dtf_ymdhms_dash);
+            assertEquals(1.0, MainPage.calculateDayDifference(today, tomorrow));
+        }
     }
 
     @Test
     public void testClickOnCalendarAppointmentRedirects() {
+        login();
+        selectMonthMode();
+
 
     }
 
